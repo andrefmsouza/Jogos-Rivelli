@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Corrida do Elvis</title>
+        <style>
+            html, body{
+                margin: 0px;
+                padding:0px;
+                background: #cc0000;
+            }
+            canvas{
+                position: absolute;
+                top:0px;
+                left: 0px;
+                right: 0px;
+                margin: auto;
+            }
+        </style>
+    </head>
+    <body>
+    <script>
+        /*
+            Classe de controle do Elvis
+
+            @arg    x          Posição de inicio no eixo X na imagem base
+            @arg    y          Posição de inicio no eixo Y na imagem base
+            @arg    largura    Largura do desenho na imagem base
+            @arg    altura     Altura do desenho na imagem base
+        */
+        function SpriteElvis(x, y, largura, altura){
+            this.x = x;
+            this.y = y;
+            this.largura = largura;
+            this.altura = altura;
+
+            /*
+                Desenha o objeto na tela
+
+                @arg    xCanvas     Posição do desenho em tela no eixo X
+                @arg    yCanvas     Posição do desenho em tela no eixo Y
+            */
+            this.draw = function(xCanvas, yCanvas){
+                ctx.drawImage( img_elvis, this.x, this.y, this.largura, this.altura, xCanvas - 25 , yCanvas - 25, 100, 100 );
+            };
+        }
+
+        /*
+            Classe de controle das imagens do jogo
+
+            @arg    x          Posição de inicio no eixo X na imagem base
+            @arg    y          Posição de inicio no eixo Y na imagem base
+            @arg    largura    Largura do desenho na imagem base
+            @arg    altura     Altura do desenho na imagem base
+            @arg    lCanvas    Largura do desenho em tela
+            @arg    aCanvas    Altura do desenho em tela
+        */
+        function Sprite(x, y, largura, altura, lCanvas, aCanvas){
+            this.x = x;
+            this.y = y;
+            this.largura = largura;
+            this.altura = altura;
+            this.lCanvas = lCanvas;
+            this.aCanvas = aCanvas;
+
+            /*
+                Desenha o objeto na tela
+
+                @arg    xCanvas     Posição do desenho em tela no eixo X
+                @arg    yCanvas     Posição do desenho em tela no eixo Y
+            */
+            this.draw = function(xCanvas, yCanvas){
+                ctx.drawImage( sprite, this.x, this.y, this.largura, this.altura, xCanvas, yCanvas, this.lCanvas, this.aCanvas );
+            };
+        }
+
+        /*
+            Classe de controle das núvens do jogo
+
+            @arg    x          Posição de inicio no eixo X na imagem base
+            @arg    y          Posição de inicio no eixo Y na imagem base
+            @arg    largura    Largura do desenho na imagem base
+            @arg    altura     Altura do desenho na imagem base
+            @arg    lCanvas    Largura do desenho em tela
+            @arg    aCanvas    Altura do desenho em tela
+        */
+        function SpriteCloud(x, y, largura, altura, lCanvas, aCanvas){
+            this.x = x;
+            this.y = y;
+            this.largura = largura;
+            this.altura = altura;
+            this.lCanvas = lCanvas;
+            this.aCanvas = aCanvas;
+
+            /*
+                Desenha o objeto na tela
+
+                @arg    xCanvas     Posição do desenho em tela no eixo X
+                @arg    yCanvas     Posição do desenho em tela no eixo Y
+            */
+            this.draw = function(xCanvas, yCanvas){
+                ctx.drawImage( spriteCloud, this.x, this.y, this.largura, this.altura, xCanvas, yCanvas, this.lCanvas, this.aCanvas );
+            };
+        }
+
+        //VARIAVEIS GLOBAIS
+        var canvas, ctx, ALTURA, LARGURA, frames = 0, VELOCIDADE_INICIAL = 9, velocidade = 9, velocidade_maxima = 30, estadoAtual = 0, nextChange = 100,
+        img_elvis, sprite, spriteCloud, CONST_VELOCIDADE = 0.1, DEBUG = false, TEMPO_INSERE_INICIAL = 50, TEMPO_INSERE = 50, GRAVIDADE_INICIAL = 1.8,
+        FORCA_PULO_INICIAL = 30,
+        //IMAGEM PARA REDUZIR OS EFEITOS DA CINETOSE
+        SOL = {
+            tipo: 1,
+            largura: 70,
+            altura: 70,
+            sprite: new Sprite(507, 347, 140, 140, 70, 70)
+        },
+        INICIO_JOGO = new Sprite(1574, 54, 500, 300, 500, 300),
+        FIM_JOGO = new Sprite(957, 62, 585, 275, 585, 275),
+        estados = {
+            jogar: 0,
+            jogando: 1,
+            perdeu: 2
+        },
+        chao = {
+            x: 0,
+            y: 0,
+            altura: 114,
+            cor: "#2a8703",
+            sprite: new Sprite(10, 959, 870, 114, 870, 114),
+            update: function(){
+                if( estadoAtual == estados.jogando)
+                    this.x -= velocidade;
+
+                if( this.x <= -875 )
+                    this.x = 0;
+            },
+            draw: function(){
+                if( DEBUG ){
+                    ctx.fillStyle = this.cor;
+                    ctx.fillRect(0, this.y, LARGURA, this.altura);
+                }
+                
+                for(var i=0; i < 4; i++)
+                    this.sprite.draw( this.x + this.sprite.largura * i, this.y );
+            }
+        },
+        
+        tipos_obstaculos = [
+            //OVOS
+            {
+                largura: 50,
+                altura: 70,
+                sprite: new Sprite(5, 58, 181, 109, 100, 70)
+            },
+            //CERCA
+            {
+                largura: 80,
+                altura: 50,
+                sprite: new Sprite(212, 79, 239, 91, 120, 50)
+            },
+            //CERCA 2
+            {
+                largura: 70,
+                altura: 50,
+                sprite: new Sprite(497, 266, 347, 64, 120, 50)
+            },
+            //CERCA 3
+            {
+                largura: 60,
+                altura: 50,
+                sprite: new Sprite(461, 61, 206, 100, 90, 50)
+            },
+            //CERCA 4
+            {
+                largura: 70,
+                altura: 50,
+                sprite: new Sprite(687, 69, 222, 95, 100, 50)
+            }
+        ],
+
+        tipos_produtos = [
+            //PRODUTO 1
+            {
+                largura: 77,
+                altura: 103,
+                sprite: new Sprite(925, 390, 155, 206, 77, 103)
+            },
+            //PRODUTO 2
+            {
+                largura: 77,
+                altura: 103,
+                sprite: new Sprite(1087, 390, 155, 206, 77, 103)
+            },
+            //PRODUTO 3
+            {
+                largura: 77,
+                altura: 103,
+                sprite: new Sprite(1254, 384, 155, 206, 77, 103)
+            },
+            //PRODUTO 4
+            {
+                largura: 77,
+                altura: 103,
+                sprite: new Sprite(1425, 385, 155, 206, 77, 103)
+            },
+            //PRODUTO 5
+            {
+                largura: 77,
+                altura: 103,
+                sprite: new Sprite(1606, 385, 155, 206, 77, 103)
+            },
+            //PRODUTO 6
+            {
+                largura: 77,
+                altura: 103,
+                sprite: new Sprite(1768, 390, 155, 206, 77, 103)
+            },
+            //PRODUTO 7
+            {
+                largura: 77,
+                altura: 103,
+                sprite: new Sprite(929, 619, 155, 206, 77, 103)
+            },
+            //PRODUTO 8
+            {
+                largura: 77,
+                altura: 103,
+                sprite: new Sprite(1093, 621, 155, 206, 77, 103)
+            }
+        ],
+
+        tipos_cenario = [
+            //ARMAZEM 1
+            {
+                tipo: 1,
+                largura: 200,
+                altura: 295,
+                sprite: new Sprite(6, 195, 500, 409, 400, 300)
+            },
+            //ARMAZEM 2
+            {
+                tipo: 1,
+                largura: 400,
+                altura: 250,
+                sprite: new Sprite(2, 604, 660, 330, 500, 250)
+            },
+            //NUVEM 1
+            {
+                tipo: 2,
+                largura: 150,
+                altura: 50,
+                sprite: new SpriteCloud(58, 70, 465, 220, 200, 80)
+            },
+            //NUVEM 2
+            {
+                tipo: 2,
+                largura: 150,
+                altura: 50,
+                sprite: new SpriteCloud(52, 312, 465, 220, 200, 80)
+            },
+            //NUVEM 3
+            {
+                tipo: 2,
+                largura: 150,
+                altura: 50,
+                sprite: new SpriteCloud(602, 582, 465, 220, 200, 80)
+            },
+            //NUVEM 4
+            {
+                tipo: 2,
+                largura: 150,
+                altura: 50,
+                sprite: new SpriteCloud(52, 824, 465, 220, 200, 80)
+            },
+            //NUVEM 5
+            {
+                tipo: 2,
+                largura: 150,
+                altura: 50,
+                sprite: new SpriteCloud(604, 306, 465, 220, 200, 80)
+            }
+            
+        ],
+
+        elvis = {
+            x: 50,
+            y: 0,
+            altura: 70,
+            largura: 60,
+            cor: "#ff4e4e",
+            gravidade: GRAVIDADE_INICIAL,
+            velocidade: 0,
+            sprite_index: 1,
+            next_sprite: 0,
+            sprite_correndo: [
+                new SpriteElvis(0, 0, 420, 550),
+                new SpriteElvis(490, 0, 420, 550),
+                new SpriteElvis(955, 0, 420, 550),
+                new SpriteElvis(490, 0, 420, 550)
+            ],
+            pulando: false,
+            sprite_pulando: new SpriteElvis(1430, 0, 420, 554),
+            forcaPulo: FORCA_PULO_INICIAL,
+            score: 0,
+            update: function(){
+                this.velocidade += this.gravidade;
+                this.y += this.velocidade;
+
+                if( this.y > chao.y - this.altura && estadoAtual != estados.perdeu ){
+                    this.y = chao.y - this.altura;
+                    this.pulando = false;
+                    this.velocidade = 0;
+                }
+
+                if(this.score > 0)
+                    this.next_sprite++;
+                if( this.next_sprite != 0 && this.next_sprite % 6 == 0)
+                    this.sprite_index++;
+
+                if(this.sprite_index >= this.sprite_correndo.length)
+                    this.sprite_index = 0;
+            },
+            reset: function(){
+                this.velocidade = 0;
+                velocidade = VELOCIDADE_INICIAL;
+                TEMPO_INSERE = TEMPO_INSERE_INICIAL;
+                this.gravidade = GRAVIDADE_INICIAL;
+                this.forcaPulo = FORCA_PULO_INICIAL;
+                this.y = 0;
+                this.score = 0;
+                nextChange = 100;
+            },
+            pula: function(){
+                if( !this.pulando ){
+                    this.velocidade -= this.forcaPulo;
+                    this.pulando = true;
+                }
+            },
+            draw: function(){
+                if( DEBUG ){
+                    ctx.fillStyle = "#000000";
+                    ctx.fillRect( this.x, this.y, this.largura, this.altura);
+                }
+                
+                if(this.pulando){
+                    this.sprite_pulando.draw( this.x, this.y );
+                }else{
+                    this.sprite_correndo[this.sprite_index].draw( this.x, this.y );
+                }
+            }
+        },
+        
+        obstaculos = {
+            _obs: [],
+            cores: [ "#ffbc1c", "#ff1c1c", "#ff85e1", "#52a7ff", "#78ff5d" ],
+            tempoInsere: 0,
+            //ENSERE UM NOVO OBSTACULO NO JOGO
+            insere: function(){
+                var aux_obstaculos = Math.floor( Math.random() * tipos_obstaculos.length );
+
+                this._obs.push({
+                    x: LARGURA,
+                    largura: tipos_obstaculos[aux_obstaculos].largura,
+                    altura: tipos_obstaculos[aux_obstaculos].altura,
+                    sprite: tipos_obstaculos[aux_obstaculos].sprite
+                });
+
+                this.tempoInsere = TEMPO_INSERE + Math.floor( 100 * Math.random() );
+
+                if( velocidade >= 30 ){
+                    TEMPO_INSERE = 5;
+                }else if( velocidade >= 25 ){
+                    TEMPO_INSERE = 10;
+                    elvis.gravidade = 2;
+                    elvis.forcaPulo = 35;
+                }else if( velocidade >= 20 ){
+                    TEMPO_INSERE = 20;
+                }else if( velocidade >= 15 ){
+                    TEMPO_INSERE = 30;
+                }else if( velocidade >= 10 ){
+                    TEMPO_INSERE = 40;
+                }
+            },
+            update: function(){
+                if( this.tempoInsere == 0 ){
+                    this.insere();
+                }else{
+                    this.tempoInsere--;
+                }
+
+                //VERIFICA COLISAO
+                for( var i =0, tam = this._obs.length; i < tam; i++){
+                    var obs = this._obs[i];
+
+                    obs.x -= velocidade;
+
+                    //PERDEU
+                    if( elvis.x < obs.x + obs.largura &&
+                        elvis.x + elvis.largura >= obs.x &&
+                        elvis.y + elvis.altura >= chao.y - obs.altura ){
+                        
+                        estadoAtual = estados.perdeu;
+                        return;
+                    //REMOVE OBSTACULO
+                    }else if( obs.x <= -obs.largura ){
+                        //elvis.score += 10;
+                        //console.log(elvis.score);
+                        this._obs.splice( i, 1 );
+                        i--;
+                        tam--;
+                    }
+                }
+            },
+            limpa: function(){
+                this._obs = [];
+            },
+            draw: function(){
+                for( var i =0, tam = this._obs.length; i < tam; i++){
+                    var obs = this._obs[i];
+
+                    if( DEBUG ){
+                        ctx.fillStyle = "#000000";
+                        ctx.fillRect( obs.x, chao.y - obs.altura, obs.largura, obs.altura );
+                    }
+
+                    obs.sprite.draw( obs.x  , chao.y - obs.altura );
+                }
+            }
+        },
+
+        produtos = {
+            _obs: [],
+            tempoInsere: 0,
+            //INSERE UM NOVO PRODUTO NO JOGO
+            insere: function(){
+                
+                var aux_produtos = Math.floor( Math.random() * tipos_produtos.length );
+
+                var y_min = chao.y - ( elvis.forcaPulo * 5) - (tipos_produtos[aux_produtos].altura );
+                var y_max = chao.y - (tipos_produtos[aux_produtos].altura );
+
+                var aux_y = Math.floor( Math.random() * ( y_max - y_min ) + ( y_min ) ) ;
+
+                this._obs.push({
+                    x: LARGURA,
+                    y: aux_y,
+                    largura: tipos_produtos[aux_produtos].largura,
+                    altura: tipos_produtos[aux_produtos].altura,
+                    sprite: tipos_produtos[aux_produtos].sprite
+                });
+
+                this.tempoInsere = TEMPO_INSERE_INICIAL + Math.floor( 100 * Math.random() );
+
+            },
+            update: function(){
+                if( this.tempoInsere == 0 ){
+                    this.insere();
+                }else{
+                    this.tempoInsere--;
+                }
+
+                //VERIFICA COLISAO
+                for( var i =0, tam = this._obs.length; i < tam; i++){
+                    var obs = this._obs[i];
+
+                    obs.x -= velocidade;
+
+                    //PEGOU O PRODUTO
+                    if( elvis.x < obs.x + obs.largura &&
+                        elvis.x + elvis.largura >= obs.x &&
+                        elvis.y + elvis.altura >= obs.y ){
+                        
+                        this._obs.splice( i, 1 );
+                        i--;
+                        tam--;
+                        
+                        //ADICIONA PONTUAÇÃO
+                        elvis.score += 1000;
+                        return;
+                    //REMOVE OBSTACULO
+                    }else if( obs.x <= -obs.largura ){
+                        //elvis.score += 10;
+                        //console.log(elvis.score);
+                        this._obs.splice( i, 1 );
+                        i--;
+                        tam--;
+                    }
+                }
+            },
+            limpa: function(){
+                this._obs = [];
+            },
+            draw: function(){
+                for( var i =0, tam = this._obs.length; i < tam; i++){
+                    var obs = this._obs[i];
+
+                    if( DEBUG ){
+                        ctx.fillStyle = "#000000";
+                        ctx.fillRect( obs.x, obs.y, obs.largura, obs.altura );
+                    }
+
+                    obs.sprite.draw( obs.x  , obs.y );
+                }
+            }
+        },
+        
+        cenario = {
+            _obs: [],
+            tempoInsere: 0,
+            //INSERE UM NOVO CENARIO DE FUNDO
+            insere: function(){
+                var aux_cenario = Math.floor( Math.random() * tipos_cenario.length );
+
+                var aux_y = Math.floor( Math.random() * ( chao.y - (tipos_cenario[aux_cenario].altura * 2 ) ) ) ;
+
+                this._obs.push({
+                    x: LARGURA,
+                    y: aux_y,
+                    tipo: tipos_cenario[aux_cenario].tipo,
+                    largura: tipos_cenario[aux_cenario].largura,
+                    altura: tipos_cenario[aux_cenario].altura,
+                    sprite: tipos_cenario[aux_cenario].sprite
+                });
+
+                this.tempoInsere = 100 + Math.floor( 100 * Math.random() );
+            },
+            update: function(){
+                if( this.tempoInsere == 0 ){
+                    this.insere();
+                }else{
+                    this.tempoInsere--;
+                }
+
+                
+                for( var i =0, tam = this._obs.length; i < tam; i++){
+                    var obs = this._obs[i];
+
+                    if( obs.tipo == 1)
+                        obs.x -= velocidade * 0.5;
+                    else
+                        obs.x -= velocidade * 0.25;
+
+                    //REMOVE OBSTACULO
+                    if( obs.x <= -obs.largura ){
+                        this._obs.splice( i, 1 );
+                        i--;
+                        tam--;
+                    }
+                }
+            },
+            limpa: function(){
+                this._obs = [];
+            },
+            draw: function(){
+                for( var i =0, tam = this._obs.length; i < tam; i++){
+                    var obs = this._obs[i];
+
+                    //ctx.fillStyle = "#000000";
+                    //ctx.fillRect( obs.x, chao.y - obs.altura, obs.largura, obs.altura );
+
+                    if( obs.tipo == 1 ){
+                        obs.sprite.draw( obs.x  , chao.y - obs.altura );
+                    }else{
+                        obs.sprite.draw( obs.x  , obs.y );
+                    }
+                }
+            }
+        }
+        ;
+
+        //UTILIZANDO UM TECLADO
+        function clique( event ){
+            if( event.keyCode != 13 && event.keyCode != 33 )
+                return;
+
+            if( estadoAtual == estados.jogando){
+                elvis.pula();
+            }else if( estadoAtual == estados.jogar && event.keyCode == 13 ){
+                estadoAtual = estados.jogando;
+            }else if( estadoAtual == estados.perdeu  && event.keyCode == 13 ){
+                obstaculos.limpa();
+
+                estadoAtual = estados.jogar;
+                elvis.reset();
+            }
+        }
+
+        //UTILIZANDO UM CELULAR/TABLET OU MONITOR TOUCH
+        function touch( event ){
+            if( estadoAtual == estados.jogando){
+                elvis.pula();
+            }else if( estadoAtual == estados.jogar ){
+                estadoAtual = estados.jogando;
+            }else if( estadoAtual == estados.perdeu ){
+                obstaculos.limpa();
+
+                estadoAtual = estados.jogar;
+                elvis.reset();
+            }
+        }
+
+        //INICIALIZANDO O JOGO
+        function main(){
+            ALTURA = window.innerHeight;
+            LARGURA = window.innerWidth;
+
+            chao.y = ALTURA - chao.altura;
+
+            canvas = document.createElement("canvas");
+            canvas.width = LARGURA - 1;
+            canvas.height = ALTURA - 1;
+            canvas.style.border = "0px solid black";
+
+            ctx = canvas.getContext("2d");
+            document.body.appendChild(canvas);
+
+            //EVENTOS DISPARADOS PELO USUARIO
+            document.addEventListener("keydown", clique);
+            document.addEventListener("touchstart", touch);
+
+            //IMAGENS BASE DO JOGO
+            img_elvis = new Image();
+            img_elvis.src = "elvis_sprite.png";
+
+            sprite = new Image();
+            sprite.src = "sprites.png";
+
+            spriteCloud = new Image();
+            spriteCloud.src = "sprites_cloud.png";
+
+            run();
+        }
+
+        //CONTROLE DE FRAMES
+        function run(){
+            update();
+            draw();
+
+            window.requestAnimationFrame(run);
+            //setTimeout(run, 10);
+        }
+
+        //ATUALIZA AS VARIAVEIS DO JOGO E VERIFICA COLISOES
+        function update(){
+            frames++;
+
+            cenario.update();
+            chao.update();
+            elvis.update();
+            if( estadoAtual == estados.jogando ){
+                elvis.score += Math.floor( velocidade );
+                if( velocidade <= velocidade_maxima && elvis.score > nextChange ){
+                    nextChange += 100;
+                    velocidade += CONST_VELOCIDADE;
+                    //console.log(velocidade);
+                }
+                produtos.update();
+                obstaculos.update();
+            }else if( estadoAtual == estados.perdeu ){
+                
+            }
+        }
+
+        //DESENHA O FRAME
+        function draw(){
+            ctx.fillStyle = "#009bbd";
+            ctx.fillRect(0, 0, LARGURA, ALTURA);
+
+            ctx.fillStyle = "#fff";
+            ctx.font = "50px Arial";
+            ctx.fillText( elvis.score, 10, 50 );
+
+
+            if( estadoAtual == estados.jogar){
+                chao.draw();
+                elvis.draw();
+
+                if(DEBUG){
+                    ctx.fillStyle = "green";
+                    ctx.fillRect( LARGURA/2 - 50, ALTURA/2 - 50, 100, 100 );
+                }
+
+                INICIO_JOGO.draw( 
+                    (LARGURA/2) - (INICIO_JOGO.largura / 2) , 
+                    (ALTURA/2) - (INICIO_JOGO.altura / 2) 
+                );
+            }else if( estadoAtual == estados.perdeu ){
+                chao.draw();
+                elvis.draw();
+
+                if(DEBUG){
+                    ctx.fillStyle = "red";
+                    ctx.fillRect( LARGURA/2 - 50, ALTURA/2 - 50, 100, 100 );
+                }
+
+                FIM_JOGO.draw( 
+                    (LARGURA/2) - (FIM_JOGO.largura / 2) , 
+                    (ALTURA/2) - (FIM_JOGO.altura / 2) 
+                );
+            }else{
+                SOL.sprite.draw( Math.floor( LARGURA/2 - ( SOL.largura / 2 ) ) , Math.floor( ALTURA/2 - ( SOL.altura / 2 ) ) ) ;
+
+                cenario.draw();
+                produtos.draw();
+                obstaculos.draw();
+
+                chao.draw();
+                elvis.draw();
+            }
+        }
+
+        //INICIALIZA O JOGO
+        main();
+    </script>
+    </body>
+</html>
