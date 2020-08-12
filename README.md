@@ -3,12 +3,12 @@
 </h4>
 
 <p align="center">
-  <img alt="GitHub language count" src="https://img.shields.io/github/languages/count/andrefmsouza/NLW2?color=%2304D361">
+  <img alt="GitHub language count" src="https://img.shields.io/github/languages/count/andrefmsouza/Jogos-Rivelli?color=%2304D361">
 
-  <img alt="Repository size" src="https://img.shields.io/github/repo-size/andrefmsouza/NLW2">
+  <img alt="Repository size" src="https://img.shields.io/github/repo-size/andrefmsouza/Jogos-Rivelli">
  
   <a href="https://github.com/andrefmsouza/NLW2/commits/master">
-    <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/andrefmsouza/NLW2">
+    <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/andrefmsouza/Jogos-Rivelli">
   </a>
 
   <img alt="License" src="https://img.shields.io/badge/license-MIT-brightgreen">
