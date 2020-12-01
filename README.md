@@ -46,7 +46,7 @@ Os dois jogos foram desenvolvidos utilizando Javascript, HTML e CSS.
 
 ## 🚀 Como executar o projeto
 
-Para executar os jogos, basta fazer o download do projeto e abrir os arquivos index.html no seu navegador.
+Para executar os jogos, basta fazer o download do projeto e abrir os arquivos index.html no seu navegador ou jogar online [clicando aqui](https://andrefmsouza.github.io/memoria-rivelli/) para jogar o jogo da memória ou [clicando aqui](https://andrefmsouza.github.io/corrida-elvis/) para jogar a corrida do Elvis.
 
 
 ## 😯 Como contribuir para o projeto
